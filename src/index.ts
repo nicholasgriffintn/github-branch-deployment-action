@@ -50,12 +50,7 @@ interface ConfigOutput {
 /*
  * This function will execute a command on the machine
  */
-const exec = (cmd, options = {}): Promise<ExecOutput> => {
-  const output = {
-    stderr: '',
-    stdout: '',
-  };
-
+const exec = (cmd, options = {}): Promise<number> => {
   return new Promise((resolve, reject) =>
     spawn('bash', ['-c', cmd], {
       env: {
@@ -65,6 +60,10 @@ const exec = (cmd, options = {}): Promise<ExecOutput> => {
       stdio: ['pipe', 'pipe', 'pipe'],
       ...options,
     })
+      .on('error', (err) => {
+        console.error(err);
+        throw err;
+      })
       .on('close', (code) => {
         if (code !== 0) {
           return reject(
@@ -220,8 +219,14 @@ const main = async () => {
     cwd: TMP_REPO_DIR,
   });
 
-  console.log(`Deleting the target branch "${config.BRANCH}"...`);
+  console.log(`Deleting the "${config.BRANCH}" branch...`);
   await exec(`git branch -D "${config.BRANCH}"`, {
+    env: CHILD_ENV,
+    cwd: TMP_REPO_DIR,
+  });
+
+  console.log(`Checking out ${config.BRANCH}" as orphan...`);
+  await exec(`git checkout --orphan "${config.BRANCH}"`, {
     env: CHILD_ENV,
     cwd: TMP_REPO_DIR,
   });
@@ -282,7 +287,7 @@ const main = async () => {
     { env: CHILD_ENV, cwd: TMP_REPO_DIR }
   );
 
-  console.log('Deployment was successful!', GITHUB_PUSH_EVENT.stdout);
+  console.log('Deployment was successful!', GITHUB_PUSH_EVENT);
 };
 
 main().catch((err) => {
