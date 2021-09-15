@@ -200,9 +200,9 @@ const main = async () => {
   await exec(`git config --global user.email "${gitData.email}"`);
 
   console.log(`Creating temp directory...`);
-  const TMP_DIR = await fs
-    .promises()
-    .mkdtemp(path.join(tmpdir(), config.TEMP_DIR_NAME));
+  const TMP_DIR = await fs.promises.mkdtemp(
+    path.join(tmpdir(), config.TEMP_DIR_NAME)
+  );
   const TMP_REPO_DIR = path.join(TMP_DIR, 'repo');
   const SSH_AUTH_SOCK = path.join(TMP_DIR, 'ssh_agent.sock');
   const CHILD_ENV = Object.assign({}, process.env, {
