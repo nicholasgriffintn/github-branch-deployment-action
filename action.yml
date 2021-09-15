@@ -1,0 +1,5 @@
+name: 'GitHub Branch Deployer'
+description: 'This action will deploy a folder to a GitHub branch.'
+runs:
+  using: 'node12'
+  main: 'src/index.js'
