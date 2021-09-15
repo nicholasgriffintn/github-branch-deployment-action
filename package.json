@@ -7,7 +7,7 @@
     "build": "tsc",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
-    "dev": "npm run package && node ./dist/index.js",
+    "dev": "npm run publish && node ./dist/index.js",
     "lint": "eslint src/**/*.ts",
     "package": "ncc build --source-map",
     "publish": "npm run format && npm run build && npm run package"

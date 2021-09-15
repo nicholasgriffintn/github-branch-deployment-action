@@ -202,6 +202,7 @@ const main = async () => {
     path.join(tmpdir(), config.TEMP_DIR_NAME)
   );
   const TMP_REPO_DIR = path.join(TMP_DIR, 'repo');
+  console.log(TMP_REPO_DIR);
   const SSH_AUTH_SOCK = path.join(TMP_DIR, 'ssh_agent.sock');
   const CHILD_ENV = Object.assign({}, process.env, {
     SSH_AUTH_SOCK,
@@ -246,8 +247,18 @@ const main = async () => {
     });
   }
 
-  console.log(`Copying all files from the target folder "${config.FOLDER}"...`);
-  await exec(`cp -rT "${path.resolve(process.cwd(), config.FOLDER)}"`);
+  console.log(
+    `Copying all files from the target folder "${path.resolve(
+      process.cwd(),
+      config.FOLDER
+    )}"...`
+  );
+  await exec(
+    `cp -r "${path.resolve(
+      process.cwd(),
+      config.FOLDER
+    )}"/ ${process.cwd()}/build`
+  );
 
   console.log('Staging files...');
   await exec(`git add -A`, { env: CHILD_ENV, cwd: TMP_REPO_DIR });
@@ -288,7 +299,7 @@ const main = async () => {
     },
   });
 
-  console.log('Pushing commit...');
+  console.log(`Pushing commit to branch "${config.BRANCH}"...`);
   const GITHUB_PUSH_EVENT = await exec(
     `git push -f origin "${config.BRANCH}"`,
     { env: CHILD_ENV, cwd: TMP_REPO_DIR }
