@@ -254,10 +254,7 @@ const main = async () => {
     )}"...`
   );
   await exec(
-    `cp -r "${path.resolve(
-      process.cwd(),
-      config.FOLDER
-    )}"/ ${process.cwd()}/build`
+    `cp -r "${path.resolve(process.cwd(), config.FOLDER)}"/ ${process.cwd()}`
   );
 
   console.log('Staging files...');
