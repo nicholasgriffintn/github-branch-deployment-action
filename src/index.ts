@@ -233,10 +233,22 @@ const main = async () => {
   console.log(
     `Clearing all files from the target branch "${config.BRANCH}"...`
   );
-  const filesToClear = fgStream(['**/*', '!.git']);
-  filesToClear.map((file) => {
-    fs.promises.unlink(file);
-  });
+  const filesToClear = fgStream([
+    '**/*',
+    '!.git',
+    {
+      absolute: true,
+      dot: true,
+      followSymbolicLinks: false,
+      cwd: TMP_REPO_DIR,
+    },
+  ]);
+
+  if (filesToClear && filesToClear.length > 0) {
+    filesToClear.map((file) => {
+      fs.promises.unlink(file);
+    });
+  }
 
   console.log(`Copying all files from the target folder "${config.FOLDER}"...`);
   await exec(`cp -rT "${path.resolve(process.cwd(), config.FOLDER)}"`);
