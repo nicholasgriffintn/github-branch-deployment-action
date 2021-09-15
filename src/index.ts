@@ -233,16 +233,12 @@ const main = async () => {
   console.log(
     `Clearing all files from the target branch "${config.BRANCH}"...`
   );
-  const filesToClear = fgStream([
-    '**/*',
-    '!.git',
-    {
-      absolute: true,
-      dot: true,
-      followSymbolicLinks: false,
-      cwd: TMP_REPO_DIR,
-    },
-  ]);
+  const filesToClear = fgStream(['**/*', '!.git'], {
+    absolute: true,
+    dot: true,
+    followSymbolicLinks: false,
+    cwd: TMP_REPO_DIR,
+  });
 
   if (filesToClear && filesToClear.length > 0) {
     filesToClear.map((file) => {
