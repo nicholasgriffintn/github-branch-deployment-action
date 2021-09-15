@@ -29,11 +29,11 @@ const github = __nccwpck_require__(5438);
  * This function will execute a command on the machine
  */
 const exec = (cmd, options = {}) => {
-    const output = {
-        stderr: '',
-        stdout: '',
-    };
     return new Promise((resolve, reject) => spawn('bash', ['-c', cmd], Object.assign({ env: Object.assign({ HOME: process.env.HOME }, process.env), stdio: ['pipe', 'pipe', 'pipe'] }, options))
+        .on('error', (err) => {
+        console.error(err);
+        throw err;
+    })
         .on('close', (code) => {
         if (code !== 0) {
             return reject(Object.assign(new Error(`Invalid exit code: ${code}`), { code }));
@@ -158,8 +158,13 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         env: CHILD_ENV,
         cwd: TMP_REPO_DIR,
     });
-    console.log(`Deleting the target branch "${config.BRANCH}"...`);
+    console.log(`Deleting the "${config.BRANCH}" branch...`);
     yield exec(`git branch -D "${config.BRANCH}"`, {
+        env: CHILD_ENV,
+        cwd: TMP_REPO_DIR,
+    });
+    console.log(`Checking out ${config.BRANCH}" as orphan...`);
+    yield exec(`git checkout --orphan "${config.BRANCH}"`, {
         env: CHILD_ENV,
         cwd: TMP_REPO_DIR,
     });
@@ -205,7 +210,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     });
     console.log('Pushing commit...');
     const GITHUB_PUSH_EVENT = yield exec(`git push -f origin "${config.BRANCH}"`, { env: CHILD_ENV, cwd: TMP_REPO_DIR });
-    console.log('Deployment was successful!', GITHUB_PUSH_EVENT.stdout);
+    console.log('Deployment was successful!', GITHUB_PUSH_EVENT);
 });
 main().catch((err) => {
     console.error(err);
