@@ -125,9 +125,8 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d;
     console.log('Generating the config...');
     const config = returnConfig();
-    console.log('current config:', config);
     console.log('Parsing the workflow event...');
-    const event = JSON.parse((yield fs.readFile(config.GITHUB_EVENT_PATH)).toString());
+    const event = JSON.parse((yield fs.promises.readFile(config.GITHUB_EVENT_PATH)).toString());
     if (!event) {
         throw new Error('Action was unable to complete. No event provided.');
     }

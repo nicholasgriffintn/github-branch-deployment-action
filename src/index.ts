@@ -172,11 +172,9 @@ const main = async () => {
   console.log('Generating the config...');
   const config = returnConfig();
 
-  console.log('current config:', config);
-
   console.log('Parsing the workflow event...');
   const event = JSON.parse(
-    (await fs.readFile(config.GITHUB_EVENT_PATH)).toString()
+    (await fs.promises.readFile(config.GITHUB_EVENT_PATH)).toString()
   );
   if (!event) {
     throw new Error('Action was unable to complete. No event provided.');
