@@ -2,6 +2,8 @@
 
 The purpose of this action is to work alongside build processes that clone a built version of your project from a branch, allowing you to extend your GitHub Action to push the distribution of your application to a seperate branch on the same repo or another repo that you give it access to.
 
+[![Latest Test](https://github.com/nicholasgriffintn/github-branch-deployment-action/actions/workflows/ci-test.yml/badge.svg)](https://github.com/nicholasgriffintn/github-branch-deployment-action/actions/workflows/ci-test.yml)
+
 You can use it in your action like this:
 
 ```yaml
