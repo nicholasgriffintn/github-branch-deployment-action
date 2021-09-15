@@ -62,7 +62,7 @@ const exec = (cmd, options = {}): Promise<number> => {
     })
       .on('error', (err) => {
         console.error(err);
-        throw err;
+        reject(err);
       })
       .on('close', (code) => {
         if (code !== 0) {
@@ -72,7 +72,6 @@ const exec = (cmd, options = {}): Promise<number> => {
         }
         return resolve(code);
       })
-      .on('error', reject)
   );
 };
 
@@ -219,7 +218,7 @@ const main = async () => {
     cwd: TMP_REPO_DIR,
   });
 
-  console.log(`Deleting the "${config.BRANCH}" branch...`);
+  /*   console.log(`Deleting the "${config.BRANCH}" branch...`);
   await exec(`git branch -D "${config.BRANCH}"`, {
     env: CHILD_ENV,
     cwd: TMP_REPO_DIR,
@@ -229,7 +228,7 @@ const main = async () => {
   await exec(`git checkout --orphan "${config.BRANCH}"`, {
     env: CHILD_ENV,
     cwd: TMP_REPO_DIR,
-  });
+  }); */
 
   console.log(
     `Clearing all files from the target branch "${config.BRANCH}"...`
