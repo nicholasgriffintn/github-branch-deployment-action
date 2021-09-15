@@ -34,13 +34,6 @@ const exec = (cmd, options = {}) => {
         stdout: '',
     };
     return new Promise((resolve, reject) => spawn('bash', ['-c', cmd], Object.assign({ env: Object.assign({ HOME: process.env.HOME }, process.env), stdio: ['pipe', 'pipe', 'pipe'] }, options))
-        .stdin.end()
-        .stdout.on('data', (data) => {
-        output.stdout += data;
-    })
-        .stderr.on('data', (data) => {
-        output.stderr += data;
-    })
         .on('close', (code) => {
         if (code !== 0) {
             return reject(Object.assign(new Error(`Invalid exit code: ${code}`), { code }));
@@ -149,6 +142,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     console.log(`Configuring git to use the name "${gitData.name}" and email "${gitData.email}"...`);
     yield exec(`git config --global user.name "${gitData.name}"`);
     yield exec(`git config --global user.email "${gitData.email}"`);
+    console.log(`Creating temp directory...`);
     const TMP_DIR = yield fs
         .promises()
         .mkdtemp(path.join(tmpdir(), config.TEMP_DIR_NAME));

@@ -65,13 +65,6 @@ const exec = (cmd, options = {}): Promise<ExecOutput> => {
       stdio: ['pipe', 'pipe', 'pipe'],
       ...options,
     })
-      .stdin.end()
-      .stdout.on('data', (data) => {
-        output.stdout += data;
-      })
-      .stderr.on('data', (data) => {
-        output.stderr += data;
-      })
       .on('close', (code) => {
         if (code !== 0) {
           return reject(
@@ -206,6 +199,7 @@ const main = async () => {
   await exec(`git config --global user.name "${gitData.name}"`);
   await exec(`git config --global user.email "${gitData.email}"`);
 
+  console.log(`Creating temp directory...`);
   const TMP_DIR = await fs
     .promises()
     .mkdtemp(path.join(tmpdir(), config.TEMP_DIR_NAME));
