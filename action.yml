@@ -26,4 +26,4 @@ inputs:
     default: 'Build: ({sha}) {msg}'
 runs:
   using: 'node12'
-  main: 'src/index.js'
+  main: 'dist/index.js'
