@@ -6,7 +6,7 @@ branding:
   color: blue
 inputs:
   GITHUB_TOKEN:
-    description: 'Provide a GitHub token here, this is used to communicate with GitHub during the actions's processes.'
+    description: 'Provide a GitHub token here, this is used to communicate with GitHub during the actionss processes.'
     required: true
     default: ${{ github.token }}
   REPO:
@@ -21,7 +21,7 @@ inputs:
     required: false
     default: '.'
   MESSAGE:
-    description: 'Change the message that's used for the build commit'
+    description: 'Change the message thats used for the build commit'
     required: false
     default: 'Build: ({sha}) {msg}'
 runs:

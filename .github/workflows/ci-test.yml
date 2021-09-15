@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs:
-  serv_content:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
