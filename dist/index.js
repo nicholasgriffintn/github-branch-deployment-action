@@ -143,9 +143,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     yield exec(`git config --global user.name "${gitData.name}"`);
     yield exec(`git config --global user.email "${gitData.email}"`);
     console.log(`Creating temp directory...`);
-    const TMP_DIR = yield fs
-        .promises()
-        .mkdtemp(path.join(tmpdir(), config.TEMP_DIR_NAME));
+    const TMP_DIR = yield fs.promises.mkdtemp(path.join(tmpdir(), config.TEMP_DIR_NAME));
     const TMP_REPO_DIR = path.join(TMP_DIR, 'repo');
     const SSH_AUTH_SOCK = path.join(TMP_DIR, 'ssh_agent.sock');
     const CHILD_ENV = Object.assign({}, process.env, {
