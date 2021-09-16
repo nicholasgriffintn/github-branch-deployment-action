@@ -15,11 +15,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __asyncValues = (this && this.__asyncValues) || function (o) {
+    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+    var m = o[Symbol.asyncIterator], i;
+    return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function () { return this; }, i);
+    function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
+    function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+};
 const spawn = __nccwpck_require__(3129).spawn;
 const https = __nccwpck_require__(7211);
 const fs = __nccwpck_require__(5747);
 const path = __nccwpck_require__(5622);
-const { stream: fgStream } = __nccwpck_require__(3664);
+const fg = __nccwpck_require__(3664);
 const { homedir, tmpdir } = __nccwpck_require__(2087);
 const gitUrlParse = __nccwpck_require__(8244);
 const git = __nccwpck_require__(6575);
@@ -128,7 +135,8 @@ const isThisAGitRepo = (dir) => __awaiter(void 0, void 0, void 0, function* () {
         .catch(() => false);
 });
 const main = () => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d;
+    var e_1, _a;
+    var _b, _c, _d, _e;
     console.log('Generating the config...');
     const config = returnConfig();
     console.log('Parsing the workflow event...');
@@ -138,13 +146,13 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     }
     console.log('Parsing GitHub data...');
     const gitData = {
-        name: ((_a = event.pusher) === null || _a === void 0 ? void 0 : _a.name)
-            ? (_b = event.pusher) === null || _b === void 0 ? void 0 : _b.name
+        name: ((_b = event.pusher) === null || _b === void 0 ? void 0 : _b.name)
+            ? (_c = event.pusher) === null || _c === void 0 ? void 0 : _c.name
             : config.GITHUB_ACTOR
                 ? config.GITHUB_ACTOR
                 : 'GitHub Action',
-        email: ((_c = event.pusher) === null || _c === void 0 ? void 0 : _c.email)
-            ? (_d = event.pusher) === null || _d === void 0 ? void 0 : _d.email
+        email: ((_d = event.pusher) === null || _d === void 0 ? void 0 : _d.email)
+            ? (_e = event.pusher) === null || _e === void 0 ? void 0 : _e.email
             : config.GITHUB_ACTOR
                 ? `${config.GITHUB_ACTOR}@users.noreply.github.com`
                 : 'nobody@users.noreply.github.com',
@@ -186,19 +194,27 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         cwd: TMP_REPO_DIR,
     });
     console.log(`Clearing all files from the target branch "${config.BRANCH}"...`);
-    const filesToClear = fgStream(['**/*', '!.git'], {
+    const filesToClear = fg.stream(['**/*', '!.git'], {
         absolute: true,
         dot: true,
         followSymbolicLinks: false,
         cwd: TMP_REPO_DIR,
     });
-    if (filesToClear && filesToClear.length > 0) {
-        filesToClear.map((file) => {
-            fs.promises.unlink(file);
-        });
+    try {
+        for (var filesToClear_1 = __asyncValues(filesToClear), filesToClear_1_1; filesToClear_1_1 = yield filesToClear_1.next(), !filesToClear_1_1.done;) {
+            const entry = filesToClear_1_1.value;
+            yield fs.unlink(entry);
+        }
+    }
+    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+    finally {
+        try {
+            if (filesToClear_1_1 && !filesToClear_1_1.done && (_a = filesToClear_1.return)) yield _a.call(filesToClear_1);
+        }
+        finally { if (e_1) throw e_1.error; }
     }
     console.log(`Copying all files from the target folder "${path.resolve(process.cwd(), config.FOLDER)}"...`);
-    yield exec(`cp -r "${path.resolve(process.cwd(), config.FOLDER)}"/ ./`, {
+    yield exec(`cp -rT "${path.resolve(process.cwd(), config.FOLDER)}"/ ./`, {
         env: CHILD_ENV,
         cwd: TMP_REPO_DIR,
     }).catch((err) => {
@@ -219,7 +235,6 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         throw err;
     });
     const commit = gitLog.length > 0 ? gitLog[0] : undefined;
-    console.log('commit data:', commit);
     const gitInfo = {
         sha: commit && commit.oid ? commit.oid : config.GITHUB_SHA,
         message: commit && commit.commit.message

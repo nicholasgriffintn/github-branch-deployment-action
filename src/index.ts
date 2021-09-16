@@ -256,7 +256,7 @@ const main = async () => {
   console.log(
     `Clearing all files from the target branch "${config.BRANCH}"...`
   );
-  const filesToClear = fg(['**/*', '!.git'], {
+  const filesToClear = fg.stream(['**/*', '!.git'], {
     absolute: true,
     dot: true,
     followSymbolicLinks: false,
