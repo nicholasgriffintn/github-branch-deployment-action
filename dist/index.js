@@ -29,7 +29,21 @@ const github = __nccwpck_require__(5438);
  * This function will execute a command on the machine
  */
 const exec = (cmd, options = {}) => {
-    return new Promise((resolve, reject) => spawn('bash', ['-c', cmd], Object.assign({ env: Object.assign({ HOME: process.env.HOME }, process.env), stdio: ['pipe', 'pipe', 'pipe'] }, options))
+    const ps = spawn('bash', ['-c', cmd], Object.assign({ env: Object.assign({ HOME: process.env.HOME }, process.env), cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'] }, options));
+    const output = {
+        stderr: '',
+        stdout: '',
+    };
+    ps.stdin.end();
+    ps.stdout.on('data', (data) => {
+        output.stdout += data;
+        console.log(`data`, data.toString());
+    });
+    ps.stderr.on('data', (data) => {
+        output.stderr += data;
+        console.error(data.toString());
+    });
+    return new Promise((resolve, reject) => ps
         .on('error', (err) => {
         console.error(err);
         reject(err);
@@ -38,7 +52,7 @@ const exec = (cmd, options = {}) => {
         if (code !== 0) {
             return reject(Object.assign(new Error(`Invalid exit code: ${code}`), { code }));
         }
-        return resolve(code);
+        return resolve(output);
     }));
 };
 /*
@@ -184,7 +198,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     console.log(`Copying all files from the target folder "${path.resolve(process.cwd(), config.FOLDER)}"...`);
-    yield exec(`cp -r "${path.resolve(process.cwd(), config.FOLDER)}"/ ${process.cwd()}`).catch((err) => {
+    yield exec(`cp -r "${path.resolve(process.cwd(), config.FOLDER)}"/ ${process.cwd()}`, { env: CHILD_ENV, cwd: TMP_REPO_DIR }).catch((err) => {
         throw err;
     });
     console.log('Staging files...');
