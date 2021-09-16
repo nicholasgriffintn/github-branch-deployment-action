@@ -2,7 +2,7 @@ const spawn = require('child_process').spawn;
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const { stream: fgStream } = require('fast-glob');
+const fg = require('fast-glob');
 const { homedir, tmpdir } = require('os');
 const gitUrlParse = require('git-url-parse');
 const git = require('isomorphic-git');
@@ -256,7 +256,7 @@ const main = async () => {
   console.log(
     `Clearing all files from the target branch "${config.BRANCH}"...`
   );
-  const filesToClear = fgStream(['**/*', '!.git'], {
+  const filesToClear = fg(['**/*', '!.git'], {
     absolute: true,
     dot: true,
     followSymbolicLinks: false,
@@ -302,7 +302,6 @@ const main = async () => {
       throw err;
     });
   const commit = gitLog.length > 0 ? gitLog[0] : undefined;
-  console.log('commit data:', commit);
   const gitInfo = {
     sha: commit && commit.oid ? commit.oid : config.GITHUB_SHA,
     message:
