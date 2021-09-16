@@ -29,25 +29,31 @@ const github = __nccwpck_require__(5438);
  * This function will execute a command on the machine
  */
 const exec = (cmd, options = {}) => {
+    const ps = spawn('bash', ['-c', cmd], Object.assign({ env: Object.assign({ HOME: process.env.HOME }, process.env), cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'] }, options));
     const output = {
         stderr: '',
         stdout: '',
     };
-    return new Promise((resolve, reject) => spawn('bash', ['-c', cmd], Object.assign({ env: Object.assign({ HOME: process.env.HOME }, process.env), stdio: ['pipe', 'pipe', 'pipe'] }, options))
-        .stdin.end()
-        .stdout.on('data', (data) => {
+    ps.stdin.end();
+    ps.stdout.on('data', (data) => {
         output.stdout += data;
-    })
-        .stderr.on('data', (data) => {
+        console.log(`data`, data.toString());
+    });
+    ps.stderr.on('data', (data) => {
         output.stderr += data;
+        console.error(data.toString());
+    });
+    return new Promise((resolve, reject) => ps
+        .on('error', (err) => {
+        console.error(err);
+        reject(err);
     })
         .on('close', (code) => {
         if (code !== 0) {
             return reject(Object.assign(new Error(`Invalid exit code: ${code}`), { code }));
         }
-        return resolve(code);
-    })
-        .on('error', reject));
+        return resolve(output);
+    }));
 };
 /*
  * This function takes the environment vars and formats them,
@@ -125,9 +131,8 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b, _c, _d;
     console.log('Generating the config...');
     const config = returnConfig();
-    console.log('current config:', config);
     console.log('Parsing the workflow event...');
-    const event = JSON.parse((yield fs.readFile(config.GITHUB_EVENT_PATH)).toString());
+    const event = JSON.parse((yield fs.promises.readFile(config.GITHUB_EVENT_PATH)).toString());
     if (!event) {
         throw new Error('Action was unable to complete. No event provided.');
     }
@@ -148,12 +153,16 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         throw new Error('Action was unable to complete. No git data was generated.');
     }
     console.log(`Configuring git to use the name "${gitData.name}" and email "${gitData.email}"...`);
-    yield exec(`git config --global user.name "${gitData.name}"`);
-    yield exec(`git config --global user.email "${gitData.email}"`);
-    const TMP_DIR = yield fs
-        .promises()
-        .mkdtemp(path.join(tmpdir(), config.TEMP_DIR_NAME));
+    yield exec(`git config --global user.name "${gitData.name}"`).catch((err) => {
+        throw err;
+    });
+    yield exec(`git config --global user.email "${gitData.email}"`).catch((err) => {
+        throw err;
+    });
+    console.log(`Creating temp directory...`);
+    const TMP_DIR = yield fs.promises.mkdtemp(path.join(tmpdir(), config.TEMP_DIR_NAME));
     const TMP_REPO_DIR = path.join(TMP_DIR, 'repo');
+    console.log(TMP_REPO_DIR);
     const SSH_AUTH_SOCK = path.join(TMP_DIR, 'ssh_agent.sock');
     const CHILD_ENV = Object.assign({}, process.env, {
         SSH_AUTH_SOCK,
@@ -161,31 +170,53 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
     console.log('Cloning the repo...');
     yield exec(`git clone "${config.URL}" "${TMP_REPO_DIR}"`, {
         env: CHILD_ENV,
+    }).catch((err) => {
+        throw err;
     });
-    console.log('Checking out a temp branch...');
-    yield exec(`git checkout -b "${Math.random().toString(36).substring(2)}"`, {
+    console.log(`Fetching branch ${config.BRANCH}...`);
+    yield exec(`git fetch -u origin ${config.BRANCH}:${config.BRANCH}`, {
         env: CHILD_ENV,
         cwd: TMP_REPO_DIR,
+    }).catch((err) => {
+        throw err;
     });
-    console.log(`Deleting the target branch "${config.BRANCH}"...`);
-    yield exec(`git branch -D "${config.BRANCH}"`, {
+    console.log(`Checking out ${config.BRANCH}...`);
+    yield exec(`git checkout "${config.BRANCH}"`, {
         env: CHILD_ENV,
         cwd: TMP_REPO_DIR,
     });
     console.log(`Clearing all files from the target branch "${config.BRANCH}"...`);
-    const filesToClear = fgStream(['**/*', '!.git']);
-    filesToClear.map((file) => {
-        fs.promises.unlink(file);
+    const filesToClear = fgStream(['**/*', '!.git'], {
+        absolute: true,
+        dot: true,
+        followSymbolicLinks: false,
+        cwd: TMP_REPO_DIR,
     });
-    console.log(`Copying all files from the target folder "${config.FOLDER}"...`);
-    yield exec(`cp -rT "${path.resolve(process.cwd(), config.FOLDER)}"`);
+    if (filesToClear && filesToClear.length > 0) {
+        filesToClear.map((file) => {
+            fs.promises.unlink(file);
+        });
+    }
+    console.log(`Copying all files from the target folder "${path.resolve(process.cwd(), config.FOLDER)}"...`);
+    yield exec(`cp -r "${path.resolve(process.cwd(), config.FOLDER)}"/ ./`, {
+        env: CHILD_ENV,
+        cwd: TMP_REPO_DIR,
+    }).catch((err) => {
+        throw err;
+    });
     console.log('Staging files...');
-    yield exec(`git add -A`, { env: CHILD_ENV, cwd: TMP_REPO_DIR });
+    yield exec(`git add -A`, { env: CHILD_ENV, cwd: TMP_REPO_DIR }).catch((err) => {
+        throw err;
+    });
     console.log('Commiting files...');
-    const gitLog = yield git.log({
+    const gitLog = yield git
+        .log({
         fs,
         depth: 1,
         dir: process.cwd(),
+    })
+        .catch((err) => {
+        throw err;
     });
     const commit = gitLog.length > 0 ? gitLog[0] : undefined;
     console.log('commit data:', commit);
@@ -195,7 +226,8 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             ? commit.commit.message
             : `${config.GITHUB_WORKFLOW} - ${config.GITHUB_RUN_ID} - ${config.GITHUB_RUN_NUMBER}`,
     };
-    yield git.commit({
+    yield git
+        .commit({
         fs,
         dir: TMP_REPO_DIR,
         message: config.MESSAGE.replace(/\{workflow\}/g, config.GITHUB_WORKFLOW || '')
@@ -211,10 +243,15 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
             name: gitData.name,
             email: gitData.email,
         },
+    })
+        .catch((err) => {
+        throw err;
     });
-    console.log('Pushing commit...');
-    const GITHUB_PUSH_EVENT = yield exec(`git push -f origin "${config.BRANCH}"`, { env: CHILD_ENV, cwd: TMP_REPO_DIR });
-    console.log('Deployment was successful!', GITHUB_PUSH_EVENT.stdout);
+    console.log(`Pushing commit to branch "${config.BRANCH}"...`);
+    const GITHUB_PUSH_EVENT = yield exec(`git push -f origin "${config.BRANCH}"`, { env: CHILD_ENV, cwd: TMP_REPO_DIR }).catch((err) => {
+        throw err;
+    });
+    console.log('Deployment was successful!', GITHUB_PUSH_EVENT);
 });
 main().catch((err) => {
     console.error(err);
