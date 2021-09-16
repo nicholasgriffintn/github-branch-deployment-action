@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
       - name: Push
-        uses: nicholasgriffin/github-branch-deployment-action@main
+        uses: nicholasgriffintn/github-branch-deployment-action@0.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.DEPLOYMENT_GITHUB_TOKEN }}
           BRANCH: serv_content
