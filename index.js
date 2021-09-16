@@ -19,7 +19,7 @@ const spawn = __nccwpck_require__(3129).spawn;
 const https = __nccwpck_require__(7211);
 const fs = __nccwpck_require__(5747);
 const path = __nccwpck_require__(5622);
-const { stream: fgStream } = __nccwpck_require__(3664);
+const fg = __nccwpck_require__(3664);
 const { homedir, tmpdir } = __nccwpck_require__(2087);
 const gitUrlParse = __nccwpck_require__(8244);
 const git = __nccwpck_require__(6575);
@@ -186,7 +186,7 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         cwd: TMP_REPO_DIR,
     });
     console.log(`Clearing all files from the target branch "${config.BRANCH}"...`);
-    const filesToClear = fgStream(['**/*', '!.git'], {
+    const filesToClear = fg(['**/*', '!.git'], {
         absolute: true,
         dot: true,
         followSymbolicLinks: false,
@@ -220,7 +220,6 @@ const main = () => __awaiter(void 0, void 0, void 0, function* () {
         throw err;
     });
     const commit = gitLog.length > 0 ? gitLog[0] : undefined;
-    console.log('commit data:', commit);
     const gitInfo = {
         sha: commit && commit.oid ? commit.oid : config.GITHUB_SHA,
         message: commit && commit.commit.message
