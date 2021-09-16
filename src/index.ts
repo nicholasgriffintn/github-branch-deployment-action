@@ -50,16 +50,34 @@ interface ConfigOutput {
 /*
  * This function will execute a command on the machine
  */
-const exec = (cmd, options = {}): Promise<number> => {
+const exec = (cmd, options = {}): Promise<ExecOutput> => {
+  const ps = spawn('bash', ['-c', cmd], {
+    env: {
+      HOME: process.env.HOME,
+      ...process.env,
+    },
+    cwd: process.cwd(),
+    stdio: ['pipe', 'pipe', 'pipe'],
+    ...options,
+  });
+
+  const output = {
+    stderr: '',
+    stdout: '',
+  };
+
+  ps.stdin.end();
+  ps.stdout.on('data', (data) => {
+    output.stdout += data;
+    console.log(`data`, data.toString());
+  });
+  ps.stderr.on('data', (data) => {
+    output.stderr += data;
+    console.error(data.toString());
+  });
+
   return new Promise((resolve, reject) =>
-    spawn('bash', ['-c', cmd], {
-      env: {
-        HOME: process.env.HOME,
-        ...process.env,
-      },
-      stdio: ['pipe', 'pipe', 'pipe'],
-      ...options,
-    })
+    ps
       .on('error', (err) => {
         console.error(err);
         reject(err);
@@ -70,7 +88,7 @@ const exec = (cmd, options = {}): Promise<number> => {
             Object.assign(new Error(`Invalid exit code: ${code}`), { code })
           );
         }
-        return resolve(code);
+        return resolve(output);
       })
   );
 };
