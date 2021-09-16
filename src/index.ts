@@ -194,8 +194,14 @@ const main = async () => {
   console.log(
     `Configuring git to use the name "${gitData.name}" and email "${gitData.email}"...`
   );
-  await exec(`git config --global user.name "${gitData.name}"`);
-  await exec(`git config --global user.email "${gitData.email}"`);
+  await exec(`git config --global user.name "${gitData.name}"`).catch((err) => {
+    throw err;
+  });
+  await exec(`git config --global user.email "${gitData.email}"`).catch(
+    (err) => {
+      throw err;
+    }
+  );
 
   console.log(`Creating temp directory...`);
   const TMP_DIR = await fs.promises.mkdtemp(
@@ -211,25 +217,23 @@ const main = async () => {
   console.log('Cloning the repo...');
   await exec(`git clone "${config.URL}" "${TMP_REPO_DIR}"`, {
     env: CHILD_ENV,
+  }).catch((err) => {
+    throw err;
   });
 
-  console.log('Checking out a temp branch...');
-  await exec(`git checkout -b "${Math.random().toString(36).substring(2)}"`, {
+  console.log(`Fetching branch ${config.BRANCH}...`);
+  await exec(`git fetch -u origin ${config.BRANCH}:${config.BRANCH}`, {
+    env: CHILD_ENV,
+    cwd: TMP_REPO_DIR,
+  }).catch((err) => {
+    throw err;
+  });
+
+  console.log(`Checking out ${config.BRANCH}...`);
+  await exec(`git checkout "${config.BRANCH}"`, {
     env: CHILD_ENV,
     cwd: TMP_REPO_DIR,
   });
-
-  /*   console.log(`Deleting the "${config.BRANCH}" branch...`);
-  await exec(`git branch -D "${config.BRANCH}"`, {
-    env: CHILD_ENV,
-    cwd: TMP_REPO_DIR,
-  });
-
-  console.log(`Checking out ${config.BRANCH}" as orphan...`);
-  await exec(`git checkout --orphan "${config.BRANCH}"`, {
-    env: CHILD_ENV,
-    cwd: TMP_REPO_DIR,
-  }); */
 
   console.log(
     `Clearing all files from the target branch "${config.BRANCH}"...`
@@ -255,17 +259,27 @@ const main = async () => {
   );
   await exec(
     `cp -r "${path.resolve(process.cwd(), config.FOLDER)}"/ ${process.cwd()}`
-  );
+  ).catch((err) => {
+    throw err;
+  });
 
   console.log('Staging files...');
-  await exec(`git add -A`, { env: CHILD_ENV, cwd: TMP_REPO_DIR });
+  await exec(`git add -A`, { env: CHILD_ENV, cwd: TMP_REPO_DIR }).catch(
+    (err) => {
+      throw err;
+    }
+  );
 
   console.log('Commiting files...');
-  const gitLog = await git.log({
-    fs,
-    depth: 1,
-    dir: process.cwd(),
-  });
+  const gitLog = await git
+    .log({
+      fs,
+      depth: 1,
+      dir: process.cwd(),
+    })
+    .catch((err) => {
+      throw err;
+    });
   const commit = gitLog.length > 0 ? gitLog[0] : undefined;
   console.log('commit data:', commit);
   const gitInfo = {
@@ -275,32 +289,38 @@ const main = async () => {
         ? commit.commit.message
         : `${config.GITHUB_WORKFLOW} - ${config.GITHUB_RUN_ID} - ${config.GITHUB_RUN_NUMBER}`,
   };
-  await git.commit({
-    fs,
-    dir: TMP_REPO_DIR,
-    message: config.MESSAGE.replace(
-      /\{workflow\}/g,
-      config.GITHUB_WORKFLOW || ''
-    )
-      .replace(/\{run\-id\}/g, config.GITHUB_RUN_ID || '')
-      .replace(/\{run\-num\}/g, config.GITHUB_RUN_NUMBER || '')
-      .replace(/\{job\-id\}/g, config.GITHUB_JOB || '')
-      .replace(/\{ref\}/g, config.GITHUB_REF || '')
-      .replace(/\{branch\}/g, config.BRANCH || '')
-      .replace(/\{sha\}/g, gitInfo.sha.substr(0, 7))
-      .replace(/\{long\-sha\}/g, gitInfo.sha)
-      .replace(/\{msg\}/g, gitInfo.message),
-    author: {
-      name: gitData.name,
-      email: gitData.email,
-    },
-  });
+  await git
+    .commit({
+      fs,
+      dir: TMP_REPO_DIR,
+      message: config.MESSAGE.replace(
+        /\{workflow\}/g,
+        config.GITHUB_WORKFLOW || ''
+      )
+        .replace(/\{run\-id\}/g, config.GITHUB_RUN_ID || '')
+        .replace(/\{run\-num\}/g, config.GITHUB_RUN_NUMBER || '')
+        .replace(/\{job\-id\}/g, config.GITHUB_JOB || '')
+        .replace(/\{ref\}/g, config.GITHUB_REF || '')
+        .replace(/\{branch\}/g, config.BRANCH || '')
+        .replace(/\{sha\}/g, gitInfo.sha.substr(0, 7))
+        .replace(/\{long\-sha\}/g, gitInfo.sha)
+        .replace(/\{msg\}/g, gitInfo.message),
+      author: {
+        name: gitData.name,
+        email: gitData.email,
+      },
+    })
+    .catch((err) => {
+      throw err;
+    });
 
   console.log(`Pushing commit to branch "${config.BRANCH}"...`);
   const GITHUB_PUSH_EVENT = await exec(
     `git push -f origin "${config.BRANCH}"`,
     { env: CHILD_ENV, cwd: TMP_REPO_DIR }
-  );
+  ).catch((err) => {
+    throw err;
+  });
 
   console.log('Deployment was successful!', GITHUB_PUSH_EVENT);
 };

@@ -22,8 +22,8 @@ jobs:
       - name: Test
         run: npm run test
 
-      - name: Build
-        run: npm run build
+      - name: Publish
+        run: npm run publish
 
       - name: Push
         uses: ./
