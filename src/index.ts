@@ -264,7 +264,7 @@ const main = async () => {
   });
 
   for await (const entry of filesToClear) {
-    await fs.unlink(entry);
+    await fs.promises.unlink(entry);
   }
 
   console.log(
