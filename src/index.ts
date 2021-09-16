@@ -263,12 +263,8 @@ const main = async () => {
     cwd: TMP_REPO_DIR,
   });
 
-  console.log(filesToClear);
-
-  if (filesToClear && filesToClear.length > 0) {
-    filesToClear.map((file) => {
-      fs.promises.unlink(file);
-    });
+  for await (const entry of filesToClear) {
+    await fs.unlink(entry);
   }
 
   console.log(
