@@ -30197,7 +30197,14 @@ async function parseRefsAdResponse(stream, { service }) {
   let lineOne = await read();
   // skip past any flushes
   while (lineOne === null) lineOne = await read();
+
   if (lineOne === true) throw new EmptyServerResponseError()
+
+  // Handle protocol v2 responses (Bitbucket Server doesn't include a `# service=` line)
+  if (lineOne.includes('version 2')) {
+    return parseCapabilitiesV2(read)
+  }
+
   // Clients MUST ignore an LF at the end of the line.
   if (lineOne.toString('utf8').replace(/\n$/, '') !== `# service=${service}`) {
     throw new ParseError(`# service=${service}\\n`, lineOne.toString('utf8'))
@@ -30209,10 +30216,12 @@ async function parseRefsAdResponse(stream, { service }) {
   // are returned.
   if (lineTwo === true) return { capabilities, refs, symrefs }
   lineTwo = lineTwo.toString('utf8');
+
   // Handle protocol v2 responses
   if (lineTwo.includes('version 2')) {
     return parseCapabilitiesV2(read)
   }
+
   const [firstRef, capabilitiesLine] = splitAndAssert(lineTwo, '\x00', '\\x00');
   capabilitiesLine.split(' ').map(x => capabilities.add(x));
   const [ref, name] = splitAndAssert(firstRef, ' ', ' ');
@@ -30620,8 +30629,8 @@ function filterCapabilities(server, client) {
 
 const pkg = {
   name: 'isomorphic-git',
-  version: '1.10.0',
-  agent: 'git/isomorphic-git@1.10.0',
+  version: '1.10.1',
+  agent: 'git/isomorphic-git@1.10.1',
 };
 
 class FIFO {
