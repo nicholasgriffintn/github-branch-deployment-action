@@ -25365,16 +25365,16 @@ class GitConfig {
           this.parsedConfig[configIndex] = modifiedConfig;
         }
       } else {
-        const sectionPath = path
-          .split('.')
-          .slice(0, -1)
-          .join('.')
-          .toLowerCase();
+        const pathSegments = path.split('.');
+        const section = pathSegments.shift().toLowerCase();
+        const name = pathSegments.pop();
+        const subsection = pathSegments.length
+          ? pathSegments.join('.').toLowerCase()
+          : undefined;
+        const sectionPath = subsection ? section + '.' + subsection : section;
         const sectionIndex = this.parsedConfig.findIndex(
           config => config.path === sectionPath
         );
-        const [section, subsection] = sectionPath.split('.');
-        const name = path.split('.').pop();
         const newConfig = {
           section,
           subsection,
@@ -27782,7 +27782,15 @@ class GitWalkerFs {
             oid = await shasum(
               GitObject.wrap({ type: 'blob', object: await entry.content() })
             );
-            if (stage && oid === stage.oid) {
+            // Update the stats in the index so we will get a "cache hit" next time
+            // 1) if we can (because the oid and mode are the same)
+            // 2) and only if we need to (because other stats differ)
+            if (
+              stage &&
+              oid === stage.oid &&
+              stats.mode === stage.mode &&
+              compareStats(stats, stage)
+            ) {
               index.insert({
                 filepath: entry._fullpath,
                 stats,
@@ -27840,7 +27848,7 @@ class GitIgnoreManager {
         filepath,
       },
     ];
-    const pieces = filepath.split('/');
+    const pieces = filepath.split('/').filter(Boolean);
     for (let i = 1; i < pieces.length; i++) {
       const folder = pieces.slice(0, i).join('/');
       const file = pieces.slice(i).join('/');
@@ -29349,6 +29357,7 @@ const worthWalking = (filepath, root) => {
  * @param {boolean} [args.noUpdateHead]
  * @param {boolean} [args.dryRun]
  * @param {boolean} [args.force]
+ * @param {boolean} [args.track]
  *
  * @returns {Promise<void>} Resolves successfully when filesystem operations are complete
  *
@@ -29366,6 +29375,7 @@ async function _checkout({
   noUpdateHead,
   dryRun,
   force,
+  track = true,
 }) {
   // Get tree oid
   let oid;
@@ -29383,11 +29393,13 @@ async function _checkout({
       gitdir,
       ref: remoteRef,
     });
-    // Set up remote tracking branch
-    const config = await GitConfigManager.get({ fs, gitdir });
-    await config.set(`branch.${ref}.remote`, remote);
-    await config.set(`branch.${ref}.merge`, `refs/heads/${ref}`);
-    await GitConfigManager.save({ fs, gitdir, config });
+    if (track) {
+      // Set up remote tracking branch
+      const config = await GitConfigManager.get({ fs, gitdir });
+      await config.set(`branch.${ref}.remote`, remote);
+      await config.set(`branch.${ref}.merge`, `refs/heads/${ref}`);
+      await GitConfigManager.save({ fs, gitdir, config });
+    }
     // Create a new branch that points at that same commit
     await GitRefManager.writeRef({
       fs,
@@ -29912,6 +29924,7 @@ async function analyze({
  * @param {boolean} [args.noUpdateHead] - If true, will update the working directory but won't update HEAD. Defaults to `false` when `ref` is provided, and `true` if `ref` is not provided.
  * @param {boolean} [args.dryRun = false] - If true, simulates a checkout so you can test whether it would succeed.
  * @param {boolean} [args.force = false] - If true, conflicts will be ignored and files will be overwritten regardless of local changes.
+ * @param {boolean} [args.track = true] - If false, will not set the remote branch tracking information. Defaults to true.
  * @param {object} [args.cache] - a [cache](cache.md) object
  *
  * @returns {Promise<void>} Resolves successfully when filesystem operations are complete
@@ -29959,6 +29972,7 @@ async function checkout({
   noUpdateHead = _ref === undefined,
   dryRun = false,
   force = false,
+  track = true,
   cache = {},
 }) {
   try {
@@ -29980,6 +29994,7 @@ async function checkout({
       noUpdateHead,
       dryRun,
       force,
+      track,
     })
   } catch (err) {
     err.caller = 'git.checkout';
@@ -30663,8 +30678,8 @@ function filterCapabilities(server, client) {
 
 const pkg = {
   name: 'isomorphic-git',
-  version: '1.10.2',
-  agent: 'git/isomorphic-git@1.10.2',
+  version: '1.11.1',
+  agent: 'git/isomorphic-git@1.11.1',
 };
 
 class FIFO {
