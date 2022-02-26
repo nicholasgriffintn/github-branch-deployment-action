@@ -27305,7 +27305,7 @@ class UnknownTransportError extends BaseError {
   /**
    * @param {string} url
    * @param {string} transport
-   * @param {string} suggestion
+   * @param {string} [suggestion]
    */
   constructor(url, transport, suggestion) {
     super(
@@ -30906,8 +30906,8 @@ function filterCapabilities(server, client) {
 
 const pkg = {
   name: 'isomorphic-git',
-  version: '1.11.1',
-  agent: 'git/isomorphic-git@1.11.1',
+  version: '1.11.2',
+  agent: 'git/isomorphic-git@1.11.2',
 };
 
 class FIFO {
