@@ -20,7 +20,7 @@
     "@actions/github": "^5.0.0",
     "fast-glob": "^3.2.10",
     "git-url-parse": "^11.6.0",
-    "isomorphic-git": "^1.11.2",
+    "isomorphic-git": "^1.12.0",
     "path": "^0.12.7"
   },
   "devDependencies": {
